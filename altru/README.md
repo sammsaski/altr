@@ -32,3 +32,16 @@ To start it up, execute the following command:
 
 streamlit run path/to/file/run_streamlit.py
 ```
+
+---
+
+# Getting started with development.
+First start the virtual environment.
+
+1. beautifulsoup4 -- `pip install beautifulsoup4`
+2. streamlit -- `pip install streamlit`
+
+Next, we need to package up our own code so that the import statements work.
+First, make sure you're in the root directory (i.e. the directory whose children are `altru`, `.gitignore`, `setup.py`).
+Then, run the following command:
+`pip install -e .`
