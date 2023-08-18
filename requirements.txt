@@ -6,8 +6,6 @@ aiosignal @ file:///tmp/build/80754af9/aiosignal_1637843061372/work
 aiosqlite @ file:///private/var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/abs_3d75lecab1/croot/aiosqlite_1683773918307/work
 alabaster @ file:///home/ktietz/src/ci/alabaster_1611921544520/work
 altair==5.0.1
-# Editable install with no version control (altru==1.0)
--e /Users/sasakis/git/altru-listings
 anaconda-catalogs @ file:///private/var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/abs_e8tmw882qa/croot/anaconda-catalogs_1685727305051/work
 anaconda-client==1.12.0
 anaconda-navigator==2.4.2
