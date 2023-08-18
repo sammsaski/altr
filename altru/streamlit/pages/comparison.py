@@ -1,33 +1,9 @@
 import streamlit as st
 from difflib import Differ
 import re
+import streamlit.components.v1 as components
 
 # NOTE: Add streamlit on-Hover tabs: https://github.com/Socvest/streamlit-on-Hover-tabs
-
-true_data = {
-    'address': '88 Rose Way, Bridgehampton, NY 11932',
-    'price': '$21,000,000',
-    'bedrooms': '10',
-    'bathrooms': '15',
-    'sqft': '12,300',
-    'acre': '1.5 Acres',
-    'year_built': '2022'
-}
-
-scraped_data = {
-    'address': '88 Rose Way, Water Mills, NY 11976',
-    'price': '$21,000,000',
-    'bedrooms': '10',
-    'bathrooms': '15',
-    'sqft': '12,300',
-    'acre': '1.50 Acres',
-    'year_built': '2022'
-}
-
-st.title(f"Comparison Report for")
-st.header(f":green[{true_data['address']}]")
-
-st.divider()
 
 def compare_address(t, s):
     if t == s:
@@ -118,12 +94,30 @@ def compare_year_built(t: str, s: str):
     return (s, f':green[{t}]') if int(s) == int(t) else (f':red[{s}]', t)
 
 
-# Difference
+true_data = {
+    'address': '88 Rose Way, Bridgehampton, NY 11932',
+    'price': '$21,000,000',
+    'bedrooms': '10',
+    'bathrooms': '15',
+    'sqft': '12,300',
+    'acre': '1.5 Acres',
+    'year_built': '2022'
+}
 
-# NOTE: KEEP WORKING ON THIS.
-# with st.container():
-# same, d = compare_address(true_data['address'], scraped_data['address'])
-wa, ra = compare_address(true_data['address'], scraped_data['address'])
+scraped_data = {
+    'address': '88 Rose Way, Water Mills, NY 11976',
+    'price': '$21,000,000',
+    'bedrooms': '10',
+    'bathrooms': '15',
+    'sqft': '12,300',
+    'acre': '1.50 Acres',
+    'year_built': '2022'
+}
+
+st.header(f"Comparison Report for")
+st.title(f":green[{true_data['address']}]")
+
+st.divider()
 
 attrs = ['address', 'price' , 'bedrooms', 'bathrooms', 'sqft', 'acre', 'year_built']
 
@@ -136,6 +130,57 @@ call_dict = {
     'acre': compare_acre,
     'year_built': compare_year_built,
 }
+
+# with st.container():
+#     for a in attrs:
+#         w, r = call_dict[a](true_data[a], scraped_data[a])
+
+#         if a == 'address':
+#             st.metric(a, scraped_data[a])
+#         else:
+#             st.metric(a, f'{r}   ▸         {w}')
+
+css = '''
+    [data-testid="stCaptionContainer"] {
+        padding-top: 15px;
+    }
+'''
+
+st.markdown(f'<style>{css}</style>', unsafe_allow_html=True)
+
+for a in attrs:
+    w, r = call_dict[a](true_data[a], scraped_data[a])
+
+    if a == 'address':
+        col = st.columns([3, 14])
+        col[0].caption(a)
+        col[1].subheader(w)
+    else:
+        col = st.columns([3, 6, 2, 6])
+
+        col[0].caption(a)
+        col[1].subheader(f'{r}')
+        col[2].subheader('▸')
+        col[3].subheader(f'{w}')
+
+
+
+
+st.divider()
+
+# red : rgb(255, 75, 75);
+# green : rgb(61, 213, 109);
+
+
+
+# Difference
+
+# NOTE: KEEP WORKING ON THIS.
+# with st.container():
+# same, d = compare_address(true_data['address'], scraped_data['address'])
+wa, ra = compare_address(true_data['address'], scraped_data['address'])
+
+
 
 for a in attrs:
     col = st.columns(2)
