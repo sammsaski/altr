@@ -1,5 +1,6 @@
 import streamlit as st
 from difflib import Differ
+import re
 
 st.title("Comparison")
 
@@ -37,31 +38,87 @@ with scraped:
 
 st.divider()
 
-def comparison(t, s):
-    """Add type annotations"""
+
+def compare_address(t, s):
     if t == s:
         return True, []
-    d = Differ()
-    return False, list(d.compare(t, s))
+    
+    # len of t and s should be the same after split.
+    t = t.split(",")
+    s = s.split(",")
 
+    d = Differ()
+
+    differences = [list(d.compare(x, y)) for x, y in zip(t, s)]
+
+    wrong = ''
+    right = ''
+
+    for i, diff in enumerate(differences):
+
+        diff = list(map(str.strip, diff))
+        diff = list(map(lambda x: x.replace('', ' ') if x == '' else x, diff))
+
+        if t[i] == ''.join(diff):
+            wrong += f'{t[i]}, '
+            right += f'{t[i]}, '
+        else:
+            wrong += f':red[{s[i]}], '
+            right += f':green[{t[i]}], '
+    
+    return wrong[:-2], right[:-2]
+
+# NOTE: rename 'wrong' and 'right' variables. it is misleading.
+def compare_price(t, s):
+    """
+    """
+    d = Differ()
+
+    t = re.sub('[^0-9]','', t)
+    s = re.sub('[^0-9]','', s)
+
+    wrong = ''
+    right = ''
+
+    if int(t) == int(s):
+
+        s = '{:,}'.format(int(s))
+        t = '{:,}'.format(int(t))
+
+        wrong = f':green[${s}]'
+        right = f':green[${t}]'
+    
+    # NOTE: Add the else case.
+    
+    return wrong, right
+
+
+def compare_bedrooms(t, s):
+    d = Differ()
+
+    # NOTE: Finish this.
+    
 
 # Difference
 
 # NOTE: KEEP WORKING ON THIS.
 with st.container():
-    same, d = comparison(true_data['address'], scraped_data['address'])
+    # same, d = compare_address(true_data['address'], scraped_data['address'])
+    wa, ra = compare_address(true_data['address'], scraped_data['address'])
 
-    wrong = ''
-    right = ''
+    st.subheader(wa)
+    st.subheader(ra)
 
-    for x in d:
-        if x[0] == ' ':
-            wrong += x[2]
-            right += x[2]
-        elif x[0] == '+':
-            right += f':green[{x[2]}]'
-        else:
-            wrong += f':red[{x[2]}]'
-    
-    st.markdown(wrong)
-    st.markdown(right)
+    st.divider()
+
+    wp, rp = compare_price(true_data['price'], scraped_data['price'])
+    st.subheader(wp)
+    st.subheader(rp)
+
+    st.divider()
+
+    wb, rb = compare_bedrooms(true_data['bedrooms'], scraped_data['bedrooms'])
+    st.subheader(wb)
+    st.subheader(rb)
+
+
