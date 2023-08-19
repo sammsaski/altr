@@ -60,14 +60,6 @@ if api_key:
                     with y:
                         st.metric(key, true_data[key])
 
-                # st.metric('Address', data['address'])
-                # st.metric('Price', data['price'])
-                # st.metric('Bedrooms', data['bedrooms'])
-                # st.metric('Bathrooms', data['bathrooms'])
-                # st.metric('Interior Square Footage', data['sqft'])
-                # st.metric('Acreage', data['acre'])
-                # st.metric('Year Built', data['year_built'])
-
 
     # Address Search
     if choice == "Address":
