@@ -40,6 +40,7 @@ First start the virtual environment.
 
 1. beautifulsoup4 -- `pip install beautifulsoup4`
 2. streamlit -- `pip install streamlit`
+3. streamlit-authenticator -- `pip install streamlit-authenticator`
 
 Next, we need to package up our own code so that the import statements work.
 First, make sure you're in the root directory (i.e. the directory whose children are `altru`, `.gitignore`, `setup.py`).
