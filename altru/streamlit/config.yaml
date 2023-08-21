@@ -1,19 +1,28 @@
-credentials:
-  usernames:
-    ssasaki:
-      email: samuel.sasaki@gmail.com
-      name: Samuel Sasaki
-      password: $2b$12$iA/tkVPYjP3iyTltBDEt1.xQgrvnoA.QJ9aKJC97oqGg2atRls5qO # To be replaced with hashed password
-      api_key: ''
-    rbriggs:
-      email: rbriggs@gmail.com
-      name: Rebecca Briggs
-      password: $2b$12$0Q.UROCSbkp24m2Dfn5Pdezo8/56HzGvrOIcc7XCPjZ/z2BiTuAmy # To be replaced with hashed password
-      api_key: ''
 cookie:
   expiry_days: 30
-  key: random_signature_key # Must be string
+  key: random_signature_key
   name: random_cookie_name
+credentials:
+  usernames:
+    rbriggs:
+      api_key: ''
+      email: rbriggs@gmail.com
+      name: Rebecca Briggs
+      password: $2b$12$0Q.UROCSbkp24m2Dfn5Pdezo8/56HzGvrOIcc7XCPjZ/z2BiTuAmy
+    ssasaki:
+      api_key: test
+      email: samuel.sasaki@gmail.com
+      name: Samuel Sasaki
+      password: $2b$12$iA/tkVPYjP3iyTltBDEt1.xQgrvnoA.QJ9aKJC97oqGg2atRls5qO
+      properties:
+        0:
+          acre: 1.50 Acres
+          address: 88 Rose Way, Water Mills, NY 11936
+          bathrooms: '15'
+          bedrooms: '10'
+          price: $12,000,000
+          sqft: 12,000
+          year_built: '2022'
 preauthorized:
   emails:
   - melsby@gmail.com

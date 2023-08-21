@@ -41,6 +41,9 @@ First start the virtual environment.
 1. beautifulsoup4 -- `pip install beautifulsoup4`
 2. streamlit -- `pip install streamlit`
 3. streamlit-authenticator -- `pip install streamlit-authenticator`
+4. streamlit-extras -- `pip install streamlit-extras`
+5. google-cloud-firestore -- `pip install google-cloud-firestore`
+6. streamlit-aggrid -- `pip install streamlit-aggrid`
 
 Next, we need to package up our own code so that the import statements work.
 First, make sure you're in the root directory (i.e. the directory whose children are `altru`, `.gitignore`, `setup.py`).

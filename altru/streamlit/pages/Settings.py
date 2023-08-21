@@ -4,6 +4,11 @@ import os
 import yaml
 from yaml.loader import SafeLoader
 
+### METHODS ###
+def toggle_api_key_form():
+    st.session_state.api_key_form_disabled = not st.session_state.api_key_form_disabled
+###############
+
 ### LOGOUT SEQUENCE PT. 1 ###
 with open (os.getcwd() + '/altru/streamlit/config.yaml') as file:
     config = yaml.load(file, Loader=SafeLoader)
@@ -26,6 +31,8 @@ if st.session_state["authentication_status"]:
     username = st.session_state['username']
 
     ### Rest of page goes here.
+    if "api_key_form_disabled" not in st.session_state:
+        st.session_state.api_key_form_disabled = False
 
 
     # TODO: Finish API Key work.
@@ -33,18 +40,20 @@ if st.session_state["authentication_status"]:
     api_key = config['credentials']['usernames'][username]['api_key'] # get the api key from yaml if it exists.
 
     if api_key:
-        st.code(api_key, language='markdown')
-    else:
-        placeholder = st.empty()
-        with placeholder.container():
-            api_key_form = st.form(key='api_key_form')
-            api_key_form.subheader('Add Scraper API Key')
-            api_key = api_key_form.text_input("Please input your Scraper API key.")
-            api_key_submit_button = api_key_form.form_submit_button(label='Submit')
+        toggle_api_key_form()
+        
+    with st.form(key='api_key_form'):
 
-            if api_key:
-                placeholder.empty()
-        st.code(api_key, language='markdown')
+        st.subheader('Add Scraper API Key')
+
+        api_key = st.text_input("Please input your Scraper API key.", key="api_key_form")
+        submit_button = st.form_submit_button(
+            label='Submit', on_click=toggle_api_key_form, disabled=st.session_state.api_key_form_disabled
+        )
+            
+    # update config file with api key.
+    with open(os.getcwd() + '/altru/streamlit/config.yaml', 'w') as file:
+        yaml.dump(config, file, default_flow_style=False)
 
 
     try:
