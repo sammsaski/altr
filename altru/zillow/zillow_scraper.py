@@ -2,6 +2,8 @@ from bs4 import BeautifulSoup
 import requests
 import subprocess
 import re
+import streamlit as st
+from streamlit_extras.row import row
 
 def curl_request(url):
     """
@@ -119,3 +121,18 @@ class ZillowScraper:
             'acre': self.get_acre(),
             'year_built': self.get_year_built(),
         }
+
+    @staticmethod
+    def display(data: dict) -> None:
+        
+        st.caption(f'Displaying data for...')
+        st.subheader(f':blue[{data["address"]}]')
+
+        property_details = row([3, 2, 2])
+        property_details2 = row([3, 2, 2])
+        property_details.metric('Price', data['price'])
+        property_details.metric('Bedrooms', data['bedrooms'])
+        property_details.metric('Bathrooms', data['bathrooms'])
+        property_details2.metric('Square Footage', data['sqft'])
+        property_details2.metric('Acreage', data['acre'])
+        property_details2.metric('Year Built', data['year_built'])
