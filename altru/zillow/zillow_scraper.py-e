@@ -2,8 +2,19 @@ from bs4 import BeautifulSoup
 import requests
 import subprocess
 import re
+from decimal import Decimal
 import streamlit as st
 from streamlit_extras.row import row
+
+test_data = {
+    'address': '99 Fairfield Pond Ln,\xa0Sagaponack, NY 11963', 
+    'price': '$18,995,000', 
+    'bedrooms': '9', 
+    'bathrooms': '15', 
+    'sqft': '12,205', 
+    'acre': '2.07 Acres', 
+    'year_built': '2016'
+}
 
 def curl_request(url):
     """
@@ -15,14 +26,52 @@ def curl_request(url):
 
 class ZillowScraper:
 
-    def __init__(self, api_key, url) -> None:
+    def __init__(self, api_key=None, url=None) -> None:
         """
-        Retrieve the source code from the property on Zillow.
+        Instantiate a ZillowScraper object and (optionally) retrieve the source
+        code from the property on Zillow.
         """
+        if api_key and url:
+            request_url = f'http://api.scraperapi.com?api_key={api_key}&url={url}'
+            self.response = curl_request(url=request_url)        
+            self.soup = BeautifulSoup(self.response, 'html.parser')
 
+    def request_html(self, api_key, url) -> None:
+        """
+        Retrieve the source code of a specific property on Zillow.
+        """
         request_url = f'http://api.scraperapi.com?api_key={api_key}&url={url}'
-        self.response = curl_request(url=request_url)        
+        self.response = curl_request(url=request_url)
         self.soup = BeautifulSoup(self.response, 'html.parser')
+
+    def normalize_data(self, scraped_data) -> dict:
+        data = {}
+
+        for key, value in scraped_data.items():
+            if key == 'address':
+                # TODO: Convert address to its parts.
+                # NOTE: For now, this is a workaround.
+                data[key] = value.replace('\xa0', ' ') # must remove this '&nbsp;' character for comparison
+
+            elif key == 'price':
+                data[key] = float(Decimal(re.sub(r'[^\d.]', '', scraped_data[key]))) # must remove '$' and commas before casting to int
+
+            elif key == 'bedrooms' or key == 'bathrooms':
+                data[key] = int(scraped_data[key]) # convert to correct type
+
+            elif key == 'sqft':
+                data[key] = int(scraped_data[key].replace(',', '')) # must remove commas before casting to int
+
+            elif key == 'acre':
+                data[key] = float(re.sub(r'[^\d*.\d*]', '', scraped_data[key]).strip()) # Remove ' Acres' and cast to float
+
+            elif key == 'year_built':
+                data[key] = int(scraped_data[key])
+
+            else:
+                raise Exception(f'An unexpected value (key: {key}) has entered the scraped data.')
+            
+        return data
     
     def get_address(self) -> str:
         """
@@ -136,3 +185,10 @@ class ZillowScraper:
         property_details2.metric('Square Footage', data['sqft'])
         property_details2.metric('Acreage', data['acre'])
         property_details2.metric('Year Built', data['year_built'])
+
+
+if __name__=="__main__":
+    scraper = ZillowScraper()
+
+    results = scraper.normalize_data(scraped_data=test_data)
+    print(results)
