@@ -7,8 +7,6 @@ from altru.zillow.zillow_scraper import ZillowScraper
 
 def test_comparison(address_or_url):
     print(address_or_url)
-    
-
 
 st.title('Playground')
 
@@ -63,7 +61,7 @@ if st.session_state['authentication_status']:
 
     # select the listing sites you would like to search.
     listing_sites = st.multiselect(
-        'Please select the listing site(s) you would like to audit.',
+        'Please select the listing site(s) you would like to retrieve data from.',
         ['Zillow', 'Redfin', 'Trulia']
     ) # TODO: Allow the user to choose their own listing site. Would need AutoML to learn to scrape the data from the site.
 
