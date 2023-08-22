@@ -44,6 +44,7 @@ First start the virtual environment.
 4. streamlit-extras -- `pip install streamlit-extras`
 5. google-cloud-firestore -- `pip install google-cloud-firestore`
 6. streamlit-aggrid -- `pip install streamlit-aggrid`
+7. fuzzywuzzy -- `pip install fuzzywuzzy`
 
 Next, we need to package up our own code so that the import statements work.
 First, make sure you're in the root directory (i.e. the directory whose children are `altru`, `.gitignore`, `setup.py`).
