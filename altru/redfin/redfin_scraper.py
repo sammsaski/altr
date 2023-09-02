@@ -1,5 +1,9 @@
 import re
+from decimal import Decimal
 from altru.scraper.scraper import Scraper
+
+
+# NOTE: Incomplete.
 
 test_data = {
     'address': '99 Fairfield Pond Ln,\xa0Sagaponack, NY 11963', 
@@ -12,7 +16,7 @@ test_data = {
 }
 
 
-class ZillowScraper(Scraper):
+class RedfinScraper(Scraper):
 
     def __init__(self, api_key=None, url=None) -> None:
         super().__init__(api_key=api_key, url=url)
@@ -47,19 +51,19 @@ class ZillowScraper(Scraper):
                 data[key] = value.replace('\xa0', ' ') # must remove this '&nbsp;' character for comparison
 
             elif key == 'price':
-                data[key] = int(re.sub(r'[^\d.]', '', value)) # must remove '$' and commas before casting to int
+                data[key] = float(Decimal(re.sub(r'[^\d.]', '', scraped_data[key]))) # must remove '$' and commas before casting to int
 
             elif key == 'bedrooms' or key == 'bathrooms':
-                data[key] = int(value) # convert to correct type
+                data[key] = int(scraped_data[key]) # convert to correct type
 
             elif key == 'sqft':
                 data[key] = int(scraped_data[key].replace(',', '')) # must remove commas before casting to int
 
             elif key == 'acre':
-                data[key] = float(re.sub(r'[^\d*.\d*]', '', value).strip()) # Remove ' Acres' and cast to float
+                data[key] = float(re.sub(r'[^\d*.\d*]', '', scraped_data[key]).strip()) # Remove ' Acres' and cast to float
 
             elif key == 'year_built':
-                data[key] = int(value)
+                data[key] = int(scraped_data[key])
 
             else:
                 raise Exception(f'An unexpected value (key: {key}) has entered the scraped data.')
@@ -69,14 +73,11 @@ class ZillowScraper(Scraper):
     def get_address(self) -> str:
         """Get the address from the source html.
 
-        NOTE: Unique to the address is that it is an 'h1' element, which makes things easy.
-
         Returns
         -------
         str :
             A string representing the address from the property site.
         """
-
         parent = self.soup.find('h1')
         return parent.text
 
@@ -97,10 +98,6 @@ class ZillowScraper(Scraper):
 
     def get_bedrooms(self) -> str:
         """Return the number of bedrooms from the source html.
-
-        Because bedrooms is structured like multiple other attributes of the house, we have to check
-        specifics about how the bedrooms are listed. Hence, we know that the children as referred to 
-        by the code consists of 2--the value and the unit.
 
         Returns
         -------
@@ -148,7 +145,7 @@ class ZillowScraper(Scraper):
             A string representing the interior square footage from the
             property site.
         """
-        
+
         bedBathItems = self.soup.find_all('span', attrs={'data-testid': 'bed-bath-item'})
 
         for item in bedBathItems:
@@ -162,38 +159,29 @@ class ZillowScraper(Scraper):
     def get_acre(self) -> str:
         """Return the acreage (lot size) from the source html.
 
-        NOTE: Finding an element in bs4 based on the text in the tag i.e. <p>Hello</p> trying to find the element with "Hello".
-
         Returns
         -------
         str :
             A string representing the acreage from the property site.
         """
-        element = self.soup.find('span', text=re.compile(r'\d+(\.\d+)? Acres?'))
+
+        element = self.soup.find('span', text=re.compile(r'\d*\.\d* Acres?'))
         return str(element.string)
 
     def get_year_built(self) -> str:
         """Return the year built from the source html.
-
-        NOTE: Finding an element in bs4 based on the text in the tag i.e. <p>Hello</p> trying to find the element with "Hello".
 
         Returns
         -------
         str :
             A string representing the year built from the property site.
         """
+
         element = self.soup.find('span', text=re.compile(r'Built in \d\d\d\d'))
         return element.string[9:]
 
 if __name__=="__main__":
-    url1 = 'https://www.zillow.com/homedetails/335-Town-Ln-Amagansett-NY-11930/32662806_zpid/'
-    url2 = 'https://www.zillow.com/homedetails/397-Sagg-Main-St-Sagaponack-NY-11962/2068763469_zpid/'
+    scraper = RedfinScraper()
 
-    api_key = 'f0bf7cd722f9d087a9ca5e358ff4df19'
-
-    scraper = ZillowScraper(api_key=api_key, url=url1)
-    results = scraper.get_acre()
-
+    results = scraper.normalize_data(scraped_data=test_data)
     print(results)
-
-

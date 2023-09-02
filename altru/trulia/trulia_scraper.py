@@ -1,5 +1,8 @@
 import re
+from decimal import Decimal
+import json
 from altru.scraper.scraper import Scraper
+
 
 test_data = {
     'address': '99 Fairfield Pond Ln,\xa0Sagaponack, NY 11963', 
@@ -12,7 +15,7 @@ test_data = {
 }
 
 
-class ZillowScraper(Scraper):
+class TruliaScraper(Scraper):
 
     def __init__(self, api_key=None, url=None) -> None:
         super().__init__(api_key=api_key, url=url)
@@ -43,20 +46,22 @@ class ZillowScraper(Scraper):
         for key, value in scraped_data.items():
             if key == 'address':
                 # TODO: Convert address to its parts.
-                # NOTE: For now, this is a workaround.
-                data[key] = value.replace('\xa0', ' ') # must remove this '&nbsp;' character for comparison
+                pass
 
             elif key == 'price':
-                data[key] = int(re.sub(r'[^\d.]', '', value)) # must remove '$' and commas before casting to int
+                # TODO: find a better way to do this that doesn't require using decimals
+                data[key] = float(Decimal(re.sub(r'[^\d.]', '', value))) # must remove '$' and commas before casting to int
 
             elif key == 'bedrooms' or key == 'bathrooms':
+                value = value.split(" ")[0]
                 data[key] = int(value) # convert to correct type
 
             elif key == 'sqft':
-                data[key] = int(scraped_data[key].replace(',', '')) # must remove commas before casting to int
+                value = value.split(" ")[0]
+                data[key] = int(value.replace(',', '')) # must remove commas before casting to int
 
             elif key == 'acre':
-                data[key] = float(re.sub(r'[^\d*.\d*]', '', value).strip()) # Remove ' Acres' and cast to float
+                data[key] = float(value) # Remove ' Acres' and cast to float
 
             elif key == 'year_built':
                 data[key] = int(value)
@@ -69,16 +74,14 @@ class ZillowScraper(Scraper):
     def get_address(self) -> str:
         """Get the address from the source html.
 
-        NOTE: Unique to the address is that it is an 'h1' element, which makes things easy.
-
         Returns
         -------
         str :
             A string representing the address from the property site.
         """
-
-        parent = self.soup.find('h1')
-        return parent.text
+        street_address = self.soup.find('span', attrs={'data-testid': 'home-details-summary-headline'}).string
+        county_state_zip = self.soup.find('span', attrs={'data-testid': 'home-details-summary-city-state'}).string
+        return f'{street_address}, {county_state_zip}'
 
     def get_price(self) -> str:
         """Get the price from the source html.
@@ -89,18 +92,13 @@ class ZillowScraper(Scraper):
             A string representing the price from the property site.
         """
 
-        parent = self.soup.find('span', attrs={'data-testid': 'price'})
-        children = parent.findChildren()
-        
-        return str(children[0].string)
+        parent = self.soup.find('h3', attrs={'data-testid': 'on-market-price-details'})
+        # get the first child's text
+        return parent.findChildren()[0].text
 
 
     def get_bedrooms(self) -> str:
         """Return the number of bedrooms from the source html.
-
-        Because bedrooms is structured like multiple other attributes of the house, we have to check
-        specifics about how the bedrooms are listed. Hence, we know that the children as referred to 
-        by the code consists of 2--the value and the unit.
 
         Returns
         -------
@@ -109,15 +107,9 @@ class ZillowScraper(Scraper):
             property site.
         """
 
-        bedBathItems = self.soup.find_all('span', attrs={'data-testid': 'bed-bath-item'})
-
-        for item in bedBathItems:
-            children = item.findChildren()
-            value = children[0].string
-            unit = children[1].text.strip()
-
-            if 'bd' == unit:
-                return str(value)
+        bedBathItems = self.soup.find('div', attrs={'data-testid': 'home-summary-size-bedrooms'})
+        # get the first child's text
+        return bedBathItems.findChildren()[0].text
 
     def get_bathrooms(self) -> str:
         """Return the number of bathrooms from the source html.
@@ -129,15 +121,9 @@ class ZillowScraper(Scraper):
             property site.
         """
 
-        bedBathItems = self.soup.find_all('span', attrs={'data-testid': 'bed-bath-item'})
+        bedBathItems = self.soup.find('div', attrs={'data-testid': 'home-summary-size-bathrooms'})
+        return bedBathItems.findChildren()[0].text
 
-        for item in bedBathItems:
-            children = item.findChildren()
-            value = children[0].string
-            unit = children[1].text.strip()
-
-            if 'ba' == unit:
-                return str(value)
 
     def get_sqft(self) -> str:
         """Return the interior square footage from the source html.
@@ -148,52 +134,52 @@ class ZillowScraper(Scraper):
             A string representing the interior square footage from the
             property site.
         """
-        
-        bedBathItems = self.soup.find_all('span', attrs={'data-testid': 'bed-bath-item'})
 
-        for item in bedBathItems:
-            children = item.findChildren()
-            value = children[0].string
-            unit = children[1].text.strip()
-
-            if 'sqft' == unit:
-                return str(value)
+        bedBathItems = self.soup.find('div', attrs={'data-testid': 'home-summary-size-floorspace'})
+        return bedBathItems.findChildren()[0].text
             
     def get_acre(self) -> str:
         """Return the acreage (lot size) from the source html.
-
-        NOTE: Finding an element in bs4 based on the text in the tag i.e. <p>Hello</p> trying to find the element with "Hello".
 
         Returns
         -------
         str :
             A string representing the acreage from the property site.
         """
-        element = self.soup.find('span', text=re.compile(r'\d+(\.\d+)? Acres?'))
-        return str(element.string)
+
+        # TODO: Implement this
+        pattern = re.compile(r'Lot Area:') # returns `Lot Area: 2.07 acres`
+        acre = self.soup.find(string=pattern)
+        acre = re.sub(r'[^\d*.\d*]', '', acre)
+        
+        return acre
 
     def get_year_built(self) -> str:
         """Return the year built from the source html.
-
-        NOTE: Finding an element in bs4 based on the text in the tag i.e. <p>Hello</p> trying to find the element with "Hello".
 
         Returns
         -------
         str :
             A string representing the year built from the property site.
         """
-        element = self.soup.find('span', text=re.compile(r'Built in \d\d\d\d'))
-        return element.string[9:]
+
+        # TODO: Implement this
+        pattern = re.compile(r'Year Built:') # returns `Year Built: 2016`
+        year_built = self.soup.find(string=pattern) 
+        year_built = re.sub(r'[^\d{4}]', '', year_built)
+
+        return year_built
 
 if __name__=="__main__":
-    url1 = 'https://www.zillow.com/homedetails/335-Town-Ln-Amagansett-NY-11930/32662806_zpid/'
-    url2 = 'https://www.zillow.com/homedetails/397-Sagg-Main-St-Sagaponack-NY-11962/2068763469_zpid/'
+    scraper = TruliaScraper(
+        api_key='f0bf7cd722f9d087a9ca5e358ff4df19',
+        url='https://www.trulia.com/p/ny/sagaponack/99-fairfield-pond-ln-sagaponack-ny-11963--2184612195'
+    )
 
-    api_key = 'f0bf7cd722f9d087a9ca5e358ff4df19'
+    data = scraper.execute()
 
-    scraper = ZillowScraper(api_key=api_key, url=url1)
-    results = scraper.get_acre()
+    print(json.dumps(data, indent=4))
 
-    print(results)
+    
 
-
+    

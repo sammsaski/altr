@@ -1,9 +1,43 @@
 import os
-from typing import List
+from typing import List, Dict, Tuple
 from google.cloud import firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
 from altru.zillow.zillow_scraper import ZillowScraper
 from altru.comparison.compare import PropertyComparison
+from altru.audit.display_data import format_string
+
+def normalize_db_data(data: dict) -> dict:
+    """Normalize the requested database data to data types of:
+        'address': str
+        'price': int
+        'bedrooms': int
+        'bathrooms': int
+        'sqft': int
+        'acre': float
+        'year_built': int
+
+    Parameters
+    ----------
+    data : dict
+        The data requested from the database.
+
+    Returns
+    -------
+    dict
+        The data type cast to the types defined above.
+    """
+    
+    KEYS = ['address', 'price', 'bedrooms', 'bathrooms', 'sqft', 'acre', 'year_built']
+    
+    for key in KEYS:
+        value = data[key]
+        if key == 'address':
+            data[key] = str(value)
+        elif key == 'acre':
+            data[key] = float(value)
+        else:
+            data[key] = int(value)
+    return data
 
 class Audit:
 
@@ -34,18 +68,13 @@ class Audit:
         self.listing_sites = listing_sites
         self.api_key = api_key
 
-        # for property in self.properties:
-            # print(property.get().to_dict()) 
-            # outputs: {'bathrooms': '15', 'bedrooms': '10', 'sqft': '15,000', 'price': '$21,000,000', 'acre': '1.50 Acres', 'address': '88 Rose Way, Water Mill, NY 11976', 'user': 'ssasaki', 'year_built': '2022'}
-            # outputs: {'bathrooms': 15, 'bedrooms': 9, 'sqft': 10930, 'price': 18995000.0, 'acre': 2.07, 'address': '99 Fairfield Pond Lane, Sagaponack, NY 11962', 'user': 'ssasaki', 'year_built': 1995}
-        # print(self.listing_sites) # outputs ['Zillow']
-        # print(self.api_key) # outputs: f0bf7cd722f9d087a9ca5e358ff4df19
-
     def get_true_data(self, property) -> dict:
         """Retrieve the true data for one property.
         
-        Return: 
-            dict
+        Returns
+        -------
+        dict :
+            A dictionary with the true data retrieved from the database.
         """
         return property.get().to_dict()
 
@@ -54,6 +83,23 @@ class Audit:
         """Retrieve the scraped data for one property."""
         scraper.request_html(api_key=self.api_key, url=url)
         return scraper.execute()
+    
+    def format_string(self, key: str, value, is_attribute_correct: bool):
+        """Format the string for the report."""
+        if key == 'address':
+            return ':{color}[{value}]'.format(color='green' if is_attribute_correct else 'red', value=value)
+
+        elif key == 'price':
+            value = '${:,.2f}'.format(value)
+            return ':{color}[{value}]'.format(color='green' if is_attribute_correct else 'red', value=value)
+
+        elif key == 'sqft':
+            value = '{value:,}'.format(value=value)
+            return ':{color}[{value}]'.format(color='green' if is_attribute_correct else 'red', value=value)
+        
+        # if key == 'bedrooms' or key == 'bathrooms' or key == 'acre' or key == 'year_built':
+        else:
+            return ':{color}[{value}]'.format(color='green' if is_attribute_correct else 'red', value=value)
 
     # TODO: Add type annotations for the types of scrapers that are supported.
     def audit_properties(self, scraper):
@@ -61,6 +107,7 @@ class Audit:
         """
         return [scraper.request_html(api_key=self.api_key, url=property['url']).execute() for property in self.properties]
 
+    # TODO: Add type annotations.
     def execute(self):
         """Execute the audit."""
         total = len(self.properties)
@@ -76,22 +123,13 @@ class Audit:
             for property in self.properties:
                 
                 # get the scraped and true data
-                true_data = self.get_true_data(property)
+                true_data = normalize_db_data(self.get_true_data(property))
                 zillow = ZillowScraper()
-                scraped_data = self.get_scraped_data(scraper=zillow, url=true_data['urls']['Zillow'])
-                scraped_data = zillow.normalize_data(scraped_data=scraped_data)
+                scraped_data = zillow.normalize_data(
+                    scraped_data=self.get_scraped_data(scraper=zillow, url=true_data['urls']['Zillow'])
+                )
 
-                # TODO: Abstract this part out
-                # perform the comparison while keeping track of accuracy stats
-                is_property_correct = True
-                property_result = {}
-                for attr, scraped_value in scraped_data.items(): # we use scraped data because true_data has some additional attributes we don't want to check (like urls, username)
-                    true_value = true_data[attr]
-                    if PropertyComparison.equal(scraped_value, true_value):
-                        property_result[attr] = f':green[{scraped_value}]'
-                    else:
-                        property_result[attr] = f':red[{scraped_value}]'
-                        is_property_correct = False
+                property_result, is_property_correct = PropertyComparison.compare(scraped_data, true_data)
                 
                 if is_property_correct:
                     correct += 1
@@ -100,4 +138,17 @@ class Audit:
                 result[property] = property_result
         return result, correct, total
                 
+if __name__=='__main__':
+    # test get_true_data method
+    db = firestore.Client.from_service_account_json(os.getcwd() + '/firestore-key.json')
+
+    properties = db.collection('audits').document('Qc6sInDWS18iQcSr2NGw').get().to_dict()['properties']
+
+    audit = Audit(properties=properties, listing_sites=['Zillow'], api_key='')
+    
+    for property in properties:
+        true_data = audit.get_true_data(property=property)
+        print(true_data)
+        true_data = normalize_db_data(true_data)
+        print(true_data)
 
