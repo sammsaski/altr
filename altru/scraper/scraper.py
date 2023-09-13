@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 import streamlit as st
 from streamlit_extras.row import row
 import subprocess
+import requests
 
 def curl_request(url) -> str:
     """Get the source code using Scraper API.
@@ -46,8 +47,9 @@ class Scraper(ABC):
             requested.
         """
         if api_key and url:
-            request_url = f'http://api.scraperapi.com?api_key={api_key}&url={url}'
-            self.response = curl_request(url=request_url)        
+            payload = {'api_key': api_key, 'url': url, 'device_type': 'desktop'}
+            response = requests.get('http://api.scraperapi.com', params=payload)
+            self.response = response.text # need to rename this to better represent what it is
             self.soup = BeautifulSoup(self.response, 'html.parser')
 
     def request_html(self, api_key, url) -> None:
@@ -65,9 +67,9 @@ class Scraper(ABC):
             The url of the property on the site whose data is being
             requested.
         """
-
-        request_url = f'http://api.scraperapi.com?api_key={api_key}&url={url}'
-        self.response = curl_request(url=request_url)
+        payload = {'api_key': api_key, 'url': url, 'device_type': 'desktop'}
+        response = requests.get('http://api.scraperapi.com', params=payload)
+        self.response = response.text # need to rename this to better represent what it is
         self.soup = BeautifulSoup(self.response, 'html.parser')
 
     @abstractmethod
