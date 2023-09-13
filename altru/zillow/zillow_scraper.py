@@ -171,8 +171,7 @@ class ZillowScraper(Scraper):
         -------
         str :
             A string representing the acreage from the property site.
-            NOTE: Only the number i.e. if listed as `0.99 Acres`, then 
-            return `0.99`.
+            NOTE: Of the form `0.99 Acres` i.e. including 'Acres'
         """
         element = self.soup.find('span', text=re.compile(r'\d+(\.\d+)? Acres?'))
         return str(element.string)
@@ -191,6 +190,47 @@ class ZillowScraper(Scraper):
         """
         element = self.soup.find('span', text=re.compile(r'Built in \d\d\d\d'))
         return element.string[9:]
+    
+    def execute(self) -> dict:
+        """Return all of the data
+        
+        NOTE: r'\$[0-9]{1,3}(?:,?[0-9]{3})*' for matching price with dollar sign
+        """
+        address = self.soup.find('h1').text
+        print(f'Scraping ~ {address} ~')
+        
+        text = self.soup.find_all('span', attrs={'class': 'Text-c11n-8-84-3__sc-aiai24-0'})
+        text = [x.get_text() for x in text]
+
+        # delete lines of text until we get to the price
+        while not re.match(r'\$[0-9]{1,3}(?:,?[0-9]{3})*', text[0]):
+            del text[0]
+
+        price = text[0]
+        bedrooms = text[1].split(" ")[0] # remove units
+        bathrooms = text[2].split(" ")[0] # remove units
+        sqft = text[3].split(" ")[0] # remove units
+
+        acre = list(filter(lambda x: re.findall(r'Lot size: (\d*\,?\.?\d+ \w+)', x), text))[0][10:]
+        year_built = list(filter(lambda x: re.findall(r'Built in \d\d\d\d', x), text))[0][9:]
+
+        print(price)
+        print(bedrooms)
+        print(bathrooms)
+        print(sqft)
+        print(acre)
+        print(year_built)
+        print('------------------------------\n\n')
+
+        return {
+            'address': address,
+            'price': price,
+            'bedrooms': bedrooms,
+            'bathrooms': bathrooms,
+            'sqft': sqft,
+            'acre': acre,
+            'year_built': year_built
+        }
 
 if __name__=="__main__":
     url1 = 'https://www.zillow.com/homedetails/335-Town-Ln-Amagansett-NY-11930/32662806_zpid/'
