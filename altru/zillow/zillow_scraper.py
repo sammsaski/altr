@@ -106,7 +106,8 @@ class ZillowScraper(Scraper):
         -------
         str :
             A string representing the number of bedrooms from the
-            property site.
+            property site. NOTE: Only the number i.e. if listed 
+            as `4 bd`, then return `4`.
         """
 
         bedBathItems = self.soup.find_all('span', attrs={'data-testid': 'bed-bath-item'})
@@ -126,7 +127,8 @@ class ZillowScraper(Scraper):
         -------
         str :
             A string representing the nubmer of bathrooms from the
-            property site.
+            property site. NOTE: Only the number i.e. if listed 
+            as `4 ba`, then return `4`.
         """
 
         bedBathItems = self.soup.find_all('span', attrs={'data-testid': 'bed-bath-item'})
@@ -146,7 +148,8 @@ class ZillowScraper(Scraper):
         -------
         str :
             A string representing the interior square footage from the
-            property site.
+            property site. NOTE: Only the number i.e. if listed 
+            as `10,000 sqft`, then return `10,000`.
         """
         
         bedBathItems = self.soup.find_all('span', attrs={'data-testid': 'bed-bath-item'})
@@ -168,6 +171,8 @@ class ZillowScraper(Scraper):
         -------
         str :
             A string representing the acreage from the property site.
+            NOTE: Only the number i.e. if listed as `0.99 Acres`, then 
+            return `0.99`.
         """
         element = self.soup.find('span', text=re.compile(r'\d+(\.\d+)? Acres?'))
         return str(element.string)
@@ -181,6 +186,8 @@ class ZillowScraper(Scraper):
         -------
         str :
             A string representing the year built from the property site.
+            NOTE: Only the year i.e. if listed as `Built in 1999`, then 
+            return `1999`.
         """
         element = self.soup.find('span', text=re.compile(r'Built in \d\d\d\d'))
         return element.string[9:]
