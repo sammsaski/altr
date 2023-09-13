@@ -197,7 +197,6 @@ class ZillowScraper(Scraper):
         NOTE: r'\$[0-9]{1,3}(?:,?[0-9]{3})*' for matching price with dollar sign
         """
         address = self.soup.find('h1').text
-        print(f'Scraping ~ {address} ~')
         
         text = self.soup.find_all('span', attrs={'class': 'Text-c11n-8-84-3__sc-aiai24-0'})
         text = [x.get_text() for x in text]
@@ -213,14 +212,6 @@ class ZillowScraper(Scraper):
 
         acre = list(filter(lambda x: re.findall(r'Lot size: (\d*\,?\.?\d+ \w+)', x), text))[0][10:]
         year_built = list(filter(lambda x: re.findall(r'Built in \d\d\d\d', x), text))[0][9:]
-
-        print(price)
-        print(bedrooms)
-        print(bathrooms)
-        print(sqft)
-        print(acre)
-        print(year_built)
-        print('------------------------------\n\n')
 
         return {
             'address': address,
